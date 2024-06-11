@@ -1,17 +1,15 @@
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 
 #define ROWS 8
 #define COLS 16
 
-int front[ROWS][COLS] = {0};
-int back[ROWS][COLS] = {0};
+int grid[ROWS][COLS] = {0};
 
 void display() {
     for (int y = 0; y < ROWS; ++y) {
         for (int x = 0; x < COLS; ++x) {
-            if (front[y][x]) {
+            if (grid[y][x]) {
                 printf("#");
             } else {
                 printf(".");
@@ -30,8 +28,9 @@ int count_nbors(int cx, int cy) {
             if (!(dx == 0 && dy == 0)) {
                 int x = mod(cx + dx, COLS);
                 int y = mod(cy + dy, ROWS);
-                if (front[y][x])
+                if (grid[y][x] & 1) {
                     nbors += 1;
+                }
             }
         }
     }
@@ -42,21 +41,40 @@ void next(void) {
     for (int y = 0; y < ROWS; ++y) {
         for (int x = 0; x < COLS; ++x) {
             int nbors = count_nbors(x, y);
-            back[y][x] = front[y][x] ? (nbors == 2 || nbors == 3) : nbors == 3;
+
+            if (grid[y][x]) {
+                if (nbors < 2 || nbors > 3) {
+                    grid[y][x] = 1;
+                } else {
+                    grid[y][x] = 3;
+                }
+            } else {
+                if (nbors == 3) {
+                    grid[y][x] = 2;
+                }
+            }
+        }
+    }
+    for (int y = 0; y < ROWS; ++y) {
+        for (int x = 0; x < COLS; ++x) {
+            grid[y][x] >>= 1;
         }
     }
 }
 
+void init() {
+    grid[0][1] = 1;
+    grid[1][2] = 1;
+    grid[2][0] = 1;
+    grid[2][1] = 1;
+    grid[2][2] = 1;
+}
+
 int main() {
-    front[0][1] = 1;
-    front[1][2] = 1;
-    front[2][0] = 1;
-    front[2][1] = 1;
-    front[2][2] = 1;
+    init();
     for (;;) {
         display();
         next();
-        memcpy(front, back, sizeof(front));
         printf("\033[%dA\033[%dD", ROWS, COLS);
         usleep(100 * 1000);
     }
